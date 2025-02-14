@@ -99,4 +99,15 @@ app.get("/qr", async (req, res) => {
 // Endpoint untuk memulai bot
 app.get("/start-bot", async (req, res) => {
     try {
-       
+        await startBot();
+        res.json({ success: true, message: "Bot started!" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to start bot." });
+    }
+});
+
+// Mulai server
+const PORT = process.env.PORT || 5002;
+app.listen(PORT, () => {
+    console.log(`🚀 Server berjalan di port ${PORT}`);
+});
