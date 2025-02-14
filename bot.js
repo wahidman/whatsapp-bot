@@ -32,6 +32,15 @@ async function getAuthState() {
     }
 }
 
+// Fungsi untuk inisialisasi state autentikasi dengan Baileys
+async function useCloudAuthState() {
+    const state = await getAuthState();
+    const saveCreds = async () => {
+        await saveAuthState(state);
+    };
+    return { state, saveCreds };
+}
+
 
 // Fungsi untuk menyimpan kredensial ke Vercel KV
 async function saveAuthState(state) {
@@ -89,15 +98,6 @@ async function startBot() {
     }
 }
 
-
-// Fungsi untuk inisialisasi state autentikasi dengan Baileys
-async function useCloudAuthState() {
-    const state = await getAuthState();
-    const saveCreds = async () => {
-        await saveAuthState(state);
-    };
-    return { state, saveCreds };
-}
 
 // Fungsi untuk memulai bot
 async function startBot() {
