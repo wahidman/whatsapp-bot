@@ -2,13 +2,12 @@
     "version": 2,
     "builds": [
       {
-        "src": "server.js",
+        "src": "bot.js",
         "use": "@vercel/node"
       }
     ],
     "routes": [
-      { "src": "/(.*)", "dest": "server.js" }
-    ],
-    "installCommand": "npm install pg"
+      { "src": "/(.*)", "dest": "bot.js" }
+    ]
   }
   
