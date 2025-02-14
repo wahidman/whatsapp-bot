@@ -3,12 +3,26 @@ const qrcode = require("qrcode-terminal");
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const qrcode = require('qrcode'); // Import qrcode untuk menghasilkan QR code dalam bentuk URL
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
 let sock;
+
+sock.ev.on("connection.update", async (update) => {
+    const { connection, qr } = update;
+    if (qr) {
+        const qrCodeUrl = await qrcode.toDataURL(qr); // Menghasilkan QR code dalam format Data URL
+        console.log("QR Code URL:", qrCodeUrl); // Anda bisa mengirim URL ini ke frontend
+    }
+    if (connection === "open") console.log("✅ Bot WhatsApp terhubung!");
+    if (connection === "close") {
+        console.log("⚠️ Koneksi terputus! Restarting...");
+        startBot();
+    }
+});
 
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState("auth");
