@@ -11,18 +11,7 @@ app.use(bodyParser.json());
 
 let sock;
 
-sock.ev.on("connection.update", async (update) => {
-    const { connection, qr } = update;
-    if (qr) {
-        const qrCodeUrl = await qrcode.toDataURL(qr); // Menghasilkan QR code dalam format Data URL
-        console.log("QR Code URL:", qrCodeUrl); // Anda bisa mengirim URL ini ke frontend
-    }
-    if (connection === "open") console.log("✅ Bot WhatsApp terhubung!");
-    if (connection === "close") {
-        console.log("⚠️ Koneksi terputus! Restarting...");
-        startBot();
-    }
-});
+
 
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState("auth");
@@ -33,16 +22,18 @@ async function startBot() {
 
     sock.ev.on("creds.update", saveCreds);
 
-    sock.ev.on("connection.update", (update) => {
+    sock.ev.on("connection.update", async (update) => {
         const { connection, qr } = update;
-        if (qr) qrcode.generate(qr, { small: true }); // Scan QR pertama kali
+        if (qr) {
+            const qrCodeUrl = await qrcode.toDataURL(qr); // Menghasilkan QR code dalam format Data URL
+            console.log("QR Code URL:", qrCodeUrl); // Anda bisa mengirim URL ini ke frontend
+        }
         if (connection === "open") console.log("✅ Bot WhatsApp terhubung!");
         if (connection === "close") {
             console.log("⚠️ Koneksi terputus! Restarting...");
             startBot();
         }
     });
-}
 
 // **API untuk Kirim Pesan ke Admin**
 app.post("/send-admin", async (req, res) => {
