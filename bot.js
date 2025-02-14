@@ -1,9 +1,9 @@
 const { makeWASocket, initAuthCreds } = require("@whiskeysockets/baileys");
-const { kv } = require("@vercel/kv"); // Gunakan Vercel KV
+const { kv } = require("@vercel/kv");
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const qrcode = require("qrcode"); // Import qrcode untuk menghasilkan QR code dalam bentuk URL
+const qrcode = require("qrcode");
 
 const app = express();
 app.use(cors());
@@ -14,97 +14,89 @@ let currentQR = "";
 
 // Fungsi untuk menyimpan kredensial ke Vercel KV
 async function saveAuthState(state) {
-    await kv.set("authState", JSON.stringify(state));
-    console.log("✅ Auth state disimpan ke Vercel KV");
+    try {
+        await kv.set("authState", JSON.stringify(state));
+        console.log("✅ Auth state disimpan ke Vercel KV");
+    } catch (error) {
+        console.error("❌ Gagal menyimpan auth state:", error);
+    }
 }
 
 // Fungsi untuk mengambil kredensial dari Vercel KV
 async function getAuthState() {
-    const state = await kv.get("authState");
-    if (!state) return initAuthCreds(); // Jika kosong, buat kredensial baru
-    console.log("✅ Auth state berhasil diambil dari Vercel KV");
-    return JSON.parse(state);
+    try {
+        const state = await kv.get("authState");
+        if (!state) {
+            console.log("🔄 Auth state kosong, membuat kredensial baru...");
+            return initAuthCreds();
+        }
+        console.log("✅ Auth state berhasil diambil dari Vercel KV");
+        return JSON.parse(state);
+    } catch (error) {
+        console.error("❌ Gagal mengambil auth state:", error);
+        return initAuthCreds();
+    }
 }
 
 // Fungsi untuk inisialisasi state autentikasi dengan Baileys
 async function useCloudAuthState() {
     const state = await getAuthState();
-
     const saveCreds = async () => {
         await saveAuthState(state);
     };
-
     return { state, saveCreds };
 }
 
 // Fungsi untuk memulai bot
 async function startBot() {
-    const { state, saveCreds } = await useCloudAuthState();
-    sock = makeWASocket({
-        auth: state,
-        printQRInTerminal: false, // Tidak perlu mencetak di terminal
-    });
+    try {
+        console.log("🔄 Memulai bot...");
+        const { state, saveCreds } = await useCloudAuthState();
+        sock = makeWASocket({
+            auth: state,
+            printQRInTerminal: false,
+        });
 
-    sock.ev.on("creds.update", saveCreds); // Simpan perubahan ke Vercel KV
+        sock.ev.on("creds.update", saveCreds);
 
-    sock.ev.on("connection.update", async (update) => {
-        const { connection, qr } = update;
+        sock.ev.on("connection.update", async (update) => {
+            const { connection, qr } = update;
 
-        if (qr) {
-            currentQR = await qrcode.toDataURL(qr); // Simpan QR dalam bentuk data URL
-            await kv.set("currentQR", currentQR); // Simpan QR di Vercel KV
-        }
+            if (qr) {
+                console.log("🔄 QR Code dihasilkan...");
+                currentQR = await qrcode.toDataURL(qr);
+                await kv.set("currentQR", currentQR);
+                console.log("✅ QR Code disimpan di Vercel KV");
+            }
 
-        if (connection === "open") {
-            console.log("✅ Bot WhatsApp terhubung!");
-        }
-        if (connection === "close") {
-            console.log("⚠️ Koneksi terputus! Restarting...");
-            startBot(); // Restart bot jika koneksi terputus
-        }
-    });
+            if (connection === "open") {
+                console.log("✅ Bot WhatsApp terhubung!");
+            }
+            if (connection === "close") {
+                console.log("⚠️ Koneksi terputus! Restarting...");
+                startBot();
+            }
+        });
+    } catch (error) {
+        console.error("❌ Gagal memulai bot:", error);
+        throw error;
+    }
 }
 
 // Endpoint API untuk menampilkan QR Code
 app.get("/qr", async (req, res) => {
-    const qr = await kv.get("currentQR");
-    if (!qr) {
-        return res.status(404).json({ message: "QR belum tersedia. Silakan tunggu." });
-    }
-    res.send(`<img src="${qr}" alt="QR Code"/>`);
-});
-
-// Endpoint untuk mengirim pesan ke admin
-app.post("/send-admin", async (req, res) => {
-    if (!sock) return res.status(500).json({ error: "Bot belum siap!" });
-
-    const { name, whatsapp, location, date, time, package, dpAmount, status } = req.body;
-    const ADMIN_PHONE = "6282251892599@s.whatsapp.net"; // Ganti dengan nomor admin (format internasional)
-
-    const message = `📢 PESANAN BARU 📢\n\nNama: ${name}\nWhatsApp: ${whatsapp}\nLokasi: ${location}\nTanggal: ${date}\nWaktu: ${time}\nPaket: ${package}\nDP: Rp ${dpAmount.toLocaleString()}\nStatus: ${status}`;
-
     try {
-        await sock.sendMessage(ADMIN_PHONE, { text: message });
-        console.log("✅ Pesan berhasil dikirim ke admin!");
-        res.json({ success: true, message: "Pesan terkirim ke admin!" });
+        const qr = await kv.get("currentQR");
+        if (!qr) {
+            return res.status(404).json({ message: "QR belum tersedia. Silakan tunggu." });
+        }
+        res.send(`<img src="${qr}" alt="QR Code"/>`);
     } catch (error) {
-        console.error("❌ Gagal mengirim pesan:", error);
-        res.status(500).json({ error: "Gagal mengirim pesan." });
+        res.status(500).json({ error: "Gagal mengambil QR Code." });
     }
 });
 
 // Endpoint untuk memulai bot
 app.get("/start-bot", async (req, res) => {
     try {
-        await startBot();
-        res.json({ success: true, message: "Bot started!" });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to start bot." });
-    }
-});
-
-// Mulai server
-const PORT = process.env.PORT || 5002;
-app.listen(PORT, () => {
-    console.log(`🚀 Server berjalan di port ${PORT}`);
-});
+       
