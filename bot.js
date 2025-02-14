@@ -1,4 +1,5 @@
 const { makeWASocket, initAuthCreds } = require("@whiskeysockets/baileys");
+require('dotenv').config();
 const { kv } = require("@vercel/kv");
 const express = require("express");
 const cors = require("cors");
