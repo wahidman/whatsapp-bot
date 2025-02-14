@@ -26,25 +26,48 @@ async function saveAuthState(state) {
 }
 
 // Fungsi untuk mengambil kredensial dari Vercel KV
-async function getAuthState() {
+async function startBot() {
     try {
-        const state = await kv.get("authState");
-        if (!state) {
-            console.log("🔄 Auth state kosong, membuat kredensial baru...");
-            return initAuthCreds();
-        }
-        const parsedState = JSON.parse(state);
-        if (!parsedState.creds || !parsedState.creds.me || !parsedState.creds.clientId) {
-            console.log("🔄 Auth state tidak valid, membuat kredensial baru...");
-            return initAuthCreds();
-        }
-        console.log("✅ Auth state berhasil diambil dari Vercel KV");
-        return parsedState;
+        console.log("🔄 Memulai bot...");
+        const { state, saveCreds } = await useCloudAuthState();
+        console.log("✅ State autentikasi berhasil diambil.");
+
+        sock = makeWASocket({
+            auth: state,
+            printQRInTerminal: false,
+        });
+        console.log("✅ Socket berhasil dibuat.");
+
+        sock.ev.on("creds.update", saveCreds);
+        console.log("✅ Event 'creds.update' berhasil diatur.");
+
+        sock.ev.on("connection.update", async (update) => {
+            console.log("🔄 Connection update:", update);
+
+            const { connection, qr } = update;
+
+            if (qr) {
+                console.log("🔄 QR Code diterima:", qr);
+                currentQR = await qrcode.toDataURL(qr);
+                await kv.set("currentQR", currentQR);
+                console.log("✅ QR Code berhasil disimpan di Vercel KV.");
+            }
+
+            if (connection === "open") {
+                console.log("✅ Bot WhatsApp berhasil terhubung!");
+            }
+
+            if (connection === "close") {
+                console.log("⚠️ Koneksi terputus! Memulai ulang bot...");
+                startBot();
+            }
+        });
     } catch (error) {
-        console.error("❌ Gagal mengambil auth state:", error);
-        return initAuthCreds();
+        console.error("❌ Gagal memulai bot:", error);
+        throw error; // Pastikan ini akan muncul di log Anda
     }
 }
+
 
 // Fungsi untuk inisialisasi state autentikasi dengan Baileys
 async function useCloudAuthState() {
