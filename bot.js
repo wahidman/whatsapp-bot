@@ -14,6 +14,8 @@ let currentQR = "";
 
 
 
+
+
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState("auth");
     const sock = makeWASocket({
