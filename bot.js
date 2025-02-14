@@ -62,6 +62,7 @@ async function startBot() {
     try {
         console.log("🔄 Memulai bot...");
         const { state, saveCreds } = await useCloudAuthState();
+
         sock = makeWASocket({
             auth: state,
             printQRInTerminal: false,
@@ -81,7 +82,13 @@ async function startBot() {
 
             if (connection === "open") {
                 console.log("✅ Bot WhatsApp terhubung!");
+                if (sock?.user?.me) {
+                    console.log("Bot is logged in as:", sock.user.me);
+                } else {
+                    console.error("User info is undefined. Please check the connection or authentication.");
+                }
             }
+
             if (connection === "close") {
                 console.log("⚠️ Koneksi terputus! Restarting...");
                 startBot();
