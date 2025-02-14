@@ -32,16 +32,6 @@ async function getAuthState() {
     }
 }
 
-// Fungsi untuk inisialisasi state autentikasi dengan Baileys
-async function useCloudAuthState() {
-    const state = await getAuthState();
-    const saveCreds = async () => {
-        await saveAuthState(state);
-    };
-    return { state, saveCreds };
-}
-
-
 // Fungsi untuk menyimpan kredensial ke Vercel KV
 async function saveAuthState(state) {
     try {
@@ -55,51 +45,18 @@ async function saveAuthState(state) {
     }
 }
 
-// Fungsi untuk mengambil kredensial dari Vercel KV
-async function startBot() {
-    try {
-        console.log("🔄 Memulai bot...");
-        const { state, saveCreds } = await useCloudAuthState();
-        console.log("✅ State autentikasi berhasil diambil.");
-
-        sock = makeWASocket({
-            auth: state,
-            printQRInTerminal: false,
-        });
-        console.log("✅ Socket berhasil dibuat.");
-
-        sock.ev.on("creds.update", saveCreds);
-        console.log("✅ Event 'creds.update' berhasil diatur.");
-
-        sock.ev.on("connection.update", async (update) => {
-            console.log("🔄 Connection update:", update);
-
-            const { connection, qr } = update;
-
-            if (qr) {
-                console.log("🔄 QR Code diterima:", qr);
-                currentQR = await qrcode.toDataURL(qr);
-                await kv.set("currentQR", currentQR);
-                console.log("✅ QR Code berhasil disimpan di Vercel KV.");
-            }
-
-            if (connection === "open") {
-                console.log("✅ Bot WhatsApp berhasil terhubung!");
-            }
-
-            if (connection === "close") {
-                console.log("⚠️ Koneksi terputus! Memulai ulang bot...");
-                startBot();
-            }
-        });
-    } catch (error) {
-        console.error("❌ Gagal memulai bot:", error);
-        throw error; // Pastikan ini akan muncul di log Anda
-    }
+// Fungsi untuk inisialisasi state autentikasi dengan Baileys
+async function useCloudAuthState() {
+    const state = await getAuthState();
+    const saveCreds = async () => {
+        await saveAuthState(state);
+    };
+    return { state, saveCreds };
 }
 
 
-// Fungsi untuk memulai bot
+
+
 async function startBot() {
     try {
         console.log("🔄 Memulai bot...");
