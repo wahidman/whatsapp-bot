@@ -34,7 +34,7 @@ async function getAuthState() {
             return initAuthCreds();
         }
         const parsedState = JSON.parse(state);
-        if (!parsedState.creds || !parsedState.creds.me) {
+        if (!parsedState.creds || !parsedState.creds.me || !parsedState.creds.clientId) {
             console.log("🔄 Auth state tidak valid, membuat kredensial baru...");
             return initAuthCreds();
         }
