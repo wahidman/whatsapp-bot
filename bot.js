@@ -52,6 +52,7 @@ async function startBot() {
 
         if (qr) {
             currentQR = await qrcode.toDataURL(qr); // Simpan QR dalam bentuk data URL
+            await kv.set("currentQR", currentQR); // Simpan QR di Vercel KV
         }
 
         if (connection === "open") {
@@ -65,11 +66,12 @@ async function startBot() {
 }
 
 // Endpoint API untuk menampilkan QR Code
-app.get("/qr", (req, res) => {
-    if (!currentQR) {
+app.get("/qr", async (req, res) => {
+    const qr = await kv.get("currentQR");
+    if (!qr) {
         return res.status(404).json({ message: "QR belum tersedia. Silakan tunggu." });
     }
-    res.send(`<img src="${currentQR}" alt="QR Code"/>`);
+    res.send(`<img src="${qr}" alt="QR Code"/>`);
 });
 
 // Endpoint untuk mengirim pesan ke admin
@@ -91,8 +93,18 @@ app.post("/send-admin", async (req, res) => {
     }
 });
 
-// Mulai server dan bot
-app.listen(5002, () => {
-    console.log("🚀 Server berjalan di port 5002");
-    startBot();
+// Endpoint untuk memulai bot
+app.get("/start-bot", async (req, res) => {
+    try {
+        await startBot();
+        res.json({ success: true, message: "Bot started!" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to start bot." });
+    }
+});
+
+// Mulai server
+const PORT = process.env.PORT || 5002;
+app.listen(PORT, () => {
+    console.log(`🚀 Server berjalan di port ${PORT}`);
 });
