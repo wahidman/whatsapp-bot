@@ -10,24 +10,26 @@ app.use(cors());
 app.use(bodyParser.json());
 
 let sock;
+let currentQR = ""; 
 
 
 
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState("auth");
-    sock = makeWASocket({
+    const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: true, // QR Code muncul di terminal
+        printQRInTerminal: false, // Tidak perlu mencetak di terminal
     });
 
     sock.ev.on("creds.update", saveCreds);
 
     sock.ev.on("connection.update", async (update) => {
         const { connection, qr } = update;
+
         if (qr) {
-            const qrCodeUrl = await qrcode.toDataURL(qr); // Menghasilkan QR code dalam format Data URL
-            console.log("QR Code URL:", qrCodeUrl); // Anda bisa mengirim URL ini ke frontend
+            currentQR = await qrcode.toDataURL(qr); // Simpan QR dalam bentuk data URL
         }
+
         if (connection === "open") console.log("✅ Bot WhatsApp terhubung!");
         if (connection === "close") {
             console.log("⚠️ Koneksi terputus! Restarting...");
@@ -35,6 +37,15 @@ async function startBot() {
         }
     });
 }
+
+// API untuk mendapatkan QR code terbaru
+app.get("/qr", (req, res) => {
+    if (!currentQR) {
+        return res.status(404).json({ message: "QR belum tersedia. Silakan tunggu." });
+    }
+    res.send(`<img src="${currentQR}" alt="QR Code"/>`);
+});
+
 
 // **API untuk Kirim Pesan ke Admin**
 app.post("/send-admin", async (req, res) => {
