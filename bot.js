@@ -114,6 +114,17 @@ app.get("/start-bot", async (req, res) => {
     }
 });
 
+app.get("/reset-auth", async (req, res) => {
+    try {
+        await kv.del("authState");
+        console.log("✅ Auth state berhasil dihapus.");
+        res.json({ success: true, message: "Auth state berhasil dihapus." });
+    } catch (error) {
+        console.error("❌ Gagal menghapus auth state:", error);
+        res.status(500).json({ error: "Gagal menghapus auth state." });
+    }
+});
+
 // Mulai server
 const PORT = process.env.PORT || 5002;
 app.listen(PORT, () => {
