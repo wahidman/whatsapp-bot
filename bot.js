@@ -15,6 +15,9 @@ let currentQR = "";
 // Fungsi untuk menyimpan kredensial ke Vercel KV
 async function saveAuthState(state) {
     try {
+        if (!state.creds || !state.creds.me) {
+            throw new Error("Auth state tidak valid");
+        }
         await kv.set("authState", JSON.stringify(state));
         console.log("✅ Auth state disimpan ke Vercel KV");
     } catch (error) {
@@ -30,8 +33,13 @@ async function getAuthState() {
             console.log("🔄 Auth state kosong, membuat kredensial baru...");
             return initAuthCreds();
         }
+        const parsedState = JSON.parse(state);
+        if (!parsedState.creds || !parsedState.creds.me) {
+            console.log("🔄 Auth state tidak valid, membuat kredensial baru...");
+            return initAuthCreds();
+        }
         console.log("✅ Auth state berhasil diambil dari Vercel KV");
-        return JSON.parse(state);
+        return parsedState;
     } catch (error) {
         console.error("❌ Gagal mengambil auth state:", error);
         return initAuthCreds();
