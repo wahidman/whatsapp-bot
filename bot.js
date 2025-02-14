@@ -1,5 +1,5 @@
 const { makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
-const qrcode = require("qrcode-terminal");
+//const qrcode = require("qrcode-terminal");
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
