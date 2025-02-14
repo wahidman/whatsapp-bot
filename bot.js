@@ -127,7 +127,8 @@ app.get("/reset-auth", async (req, res) => {
 });
 
 // Mulai server
-const PORT = process.env.PORT || 5002;
-app.listen(PORT, () => {
-    console.log(`🚀 Server berjalan di port ${PORT}`);
+const server = app.listen(0, () => {
+    const port = server.address().port;
+    console.log(`🚀 Server berjalan di port ${port}`);
 });
+
