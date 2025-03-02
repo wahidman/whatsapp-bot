@@ -46,7 +46,7 @@ app.post("/send-admin", async (req, res) => {
     if (!sock) return res.status(500).json({ error: "Bot belum siap!" });
 
     const { name, whatsapp, location, date, time, package, dpAmount, status } = req.body;
-    const ADMIN_PHONE = "6281234567890@s.whatsapp.net"; // Ganti dengan nomor admin (format internasional)
+    const ADMIN_PHONE = "6282251892599@s.whatsapp.net"; // Ganti dengan nomor admin (format internasional)
 
     const message = `📢 PESANAN BARU 📢\n\nNama: ${name}\nWhatsApp: ${whatsapp}\nLokasi: ${location}\nTanggal: ${date}\nWaktu: ${time}\nPaket: ${package}\nDP: Rp ${dpAmount.toLocaleString()}\nStatus: ${status}`;
 
